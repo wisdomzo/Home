@@ -574,15 +574,25 @@
                             <span class="px-3 py-1 bg-[#00ff9d]/10 text-[#00ff9d] rounded-full text-sm">TensorFlow.js</span>
                         </div>
                         <div class="opacity-0 group-hover:opacity-100 translate-y-4 group-hover:translate-y-0 transition-all duration-500">
-                            <a 
-                                href="https://wisdomzo.github.io/GUI/" 
-                                rel="noopener noreferrer"
-                                target="_blank"
+                            <button 
+                                type="button"
+                                onclick="checkPasswordAndRedirect_GUI()"
                                 class="inline-flex items-center px-6 py-3 bg-gradient-to-r from-[#00ff9d] to-[#0a192f] text-white font-bold rounded-full hover:scale-105 transition-transform duration-300">
                                 查看详情 Details
                                 <i class="fas fa-arrow-right ml-2"></i>
-                            </a>
+                            </button>
                         </div>
+                        <script>
+                            function checkPasswordAndRedirect_GUI() {
+                                const correctPassword = "mimo";
+                                const inputPassword = prompt("Please enter the password:", "");
+                                if (inputPassword === correctPassword) {
+                                    window.open('https://wisdomzo.github.io/GUI/', '_blank');
+                                } else if(inputPassword !== null) { 
+                                    alert("Password is incorrect!");
+                                }
+                            }
+                        </script>
                     </div>
                 </div>
 
@@ -614,15 +624,25 @@
                             <span class="px-3 py-1 bg-[#ff2a6d]/10 text-[#ff2a6d] rounded-full text-sm">Three.js</span>
                         </div>
                         <div class="opacity-0 group-hover:opacity-100 translate-y-4 group-hover:translate-y-0 transition-all duration-500">
-                            <a 
-                                href="https://wisdomzo.github.io/3dgs-demo/"
-                                rel="noopener noreferrer"
-                                target="_blank"
+                            <button 
+                                type="button"
+                                onclick="checkPasswordAndRedirect_3D()"
                                 class="inline-flex items-center px-6 py-3 bg-gradient-to-r from-[#ff2a6d] to-[#0a192f] text-white font-bold rounded-full hover:scale-105 transition-transform duration-300">
                                 查看详情 Details
                                 <i class="fas fa-arrow-right ml-2"></i>
-                            </a>
+                            </button>
                         </div>
+                        <script>
+                            function checkPasswordAndRedirect_3D() {
+                                const correctPassword = "mimo";
+                                const inputPassword = prompt("Please enter the password:", "");
+                                if (inputPassword === correctPassword) {
+                                    window.open('https://wisdomzo.github.io/3dgs-demo/', '_blank');
+                                } else if(inputPassword !== null) { 
+                                    alert("Password is incorrect!");
+                                }
+                            }
+                        </script>
                     </div>
                 </div>
 
