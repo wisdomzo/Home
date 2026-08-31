@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI-Driven Radio Wave Simulation — Cosmic Project Map</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+html,body{background:#05050f;}
+body{font-family:'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#e9ecff;}
+.wrap{max-width:1000px;margin:0 auto;padding:20px 14px 28px;}
+
+.hd{text-align:center;padding:6px 0 14px;}
+.title{font-size:22px;font-weight:700;letter-spacing:.3px;color:#fff;}
+.title .dim{color:#8f9bd6;font-weight:500;font-size:18px;}
+.sub{margin-top:7px;font-size:13px;color:#aab3e6;}
+.crumbs{margin-top:14px;display:flex;justify-content:center;align-items:center;gap:8px;flex-wrap:wrap;}
+.crumb{padding:6px 12px;border-radius:999px;font-size:12px;font-weight:600;color:#b9c1ef;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);cursor:pointer;transition:.2s;}
+.crumb.active{background:rgba(127,231,245,.16);border-color:rgba(127,231,245,.55);color:#9ef0fb;}
+.crumb:hover{background:rgba(255,255,255,.12);}
+.sep{color:#5a628f;}
+.editbar{margin-top:14px;display:flex;justify-content:center;align-items:center;gap:10px;flex-wrap:wrap;}
+.ebtn{font-size:12px;font-weight:700;letter-spacing:.5px;color:#0b1026;background:linear-gradient(180deg,#9ef0fb,#6fcbe8);border:none;border-radius:999px;padding:8px 16px;cursor:pointer;transition:.2s;box-shadow:0 2px 10px rgba(110,220,250,.4);}
+.ebtn:hover{filter:brightness(1.08);}
+.ebtn.on{background:linear-gradient(180deg,#ffd98a,#e8b54a);color:#221602;}
+.ehint{font-size:11.5px;color:#aab3e6;max-width:540px;}
+
+.stage{position:relative;min-height:600px;border-radius:22px;overflow:hidden;
+  background:radial-gradient(120% 90% at 50% 0%, #151b3d 0%, #0a0c22 45%, #05050f 100%);
+  box-shadow:inset 0 0 120px rgba(60,70,160,.25), 0 10px 40px rgba(0,0,0,.5);}
+.nebula{position:absolute;inset:0;pointer-events:none;
+  background:
+    radial-gradient(45% 35% at 22% 30%, rgba(120,80,220,.20), transparent 70%),
+    radial-gradient(40% 32% at 80% 28%, rgba(230,110,170,.16), transparent 70%),
+    radial-gradient(50% 40% at 60% 85%, rgba(60,170,200,.14), transparent 70%),
+    radial-gradient(35% 28% at 45% 50%, rgba(120,180,255,.10), transparent 70%);}
+.star{position:absolute;border-radius:50%;background:#fff;pointer-events:none;}
+.star.tw{animation:tw 3s ease-in-out infinite;}
+@keyframes tw{0%,100%{opacity:.12;}50%{opacity:.85;}}
+.stage::after{content:"";position:absolute;inset:0;pointer-events:none;background:radial-gradient(90% 90% at 50% 50%, transparent 58%, rgba(0,0,0,.5) 100%);}
+
+.level{position:absolute;inset:0;opacity:0;visibility:hidden;transform:scale(.95);
+  transition:opacity .4s ease, transform .4s ease, visibility 0s linear .4s;}
+.level.active{opacity:1;visibility:visible;transform:scale(1);
+  transition:opacity .4s ease, transform .4s ease, visibility 0s linear 0s;}
+.level.leave-deep{transform:scale(1.1);}
+.level.leave-shallow{transform:scale(.88);}
+.level.enter-deep{transform:scale(1.02);}
+.level.enter-shallow{transform:scale(.98);}
+.lv-title{position:absolute;top:12px;left:0;right:0;text-align:center;font-size:11px;letter-spacing:2.5px;color:#8f9bd6;text-transform:uppercase;pointer-events:none;}
+
+.links{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;}
+
+.node{position:absolute;transform:translate(-50%,-50%);display:flex;flex-direction:column;align-items:center;gap:6px;cursor:default;z-index:2;}
+.node.clickable{cursor:pointer;}
+.orb{position:relative;width:50px;height:50px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+  background:radial-gradient(circle at 32% 28%, rgba(255,255,255,.95) 0%, var(--c1) 28%, var(--c2) 70%, rgba(15,8,35,.95) 100%);
+  box-shadow:0 0 16px 3px var(--glow), inset 0 -4px 8px rgba(0,0,0,.35);
+  color:#fff;font-weight:800;font-size:13px;letter-spacing:.5px;}
+.orb.core{width:62px;height:62px;font-size:16px;}
+.orb .mono{text-shadow:0 1px 3px rgba(0,0,0,.7);}
+.node .label{max-width:150px;text-align:center;font-size:12px;line-height:1.32;color:#edf0ff;font-weight:500;text-shadow:0 1px 4px rgba(0,0,0,.9);}
+.node .tag{font-size:9.5px;letter-spacing:1.6px;color:rgba(255,255,255,.5);text-transform:uppercase;}
+.dive{font-size:10px;font-weight:700;letter-spacing:1.5px;color:var(--dc);background:rgba(0,0,0,.35);border:1px solid var(--dc);padding:3px 9px;border-radius:999px;animation:pulse 1.8s ease-in-out infinite;}
+@keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(255,255,255,0);}50%{box-shadow:0 0 12px 1px var(--glow);}}
+.ring{position:absolute;left:50%;top:50%;width:84px;height:84px;margin-left:-42px;margin-top:-42px;border-radius:50%;border:1.5px dashed var(--dc);opacity:.75;animation:spin 16s linear infinite;pointer-events:none;}
+@keyframes spin{to{transform:rotate(360deg);}}
+.orbwrap{position:relative;display:flex;align-items:center;justify-content:center;}
+.gchip{position:absolute;transform:translate(-50%,-50%);font-size:10.5px;letter-spacing:1.5px;color:var(--gc);text-transform:uppercase;white-space:nowrap;background:rgba(5,5,15,.5);border:1px solid var(--gc);border-radius:999px;padding:4px 11px;z-index:2;}
+.pos{display:none;font-size:9.5px;font-weight:600;letter-spacing:.3px;color:#9ef0fb;background:rgba(0,0,0,.55);border:1px solid rgba(158,240,251,.35);padding:1px 6px;border-radius:6px;white-space:nowrap;z-index:3;}
+.backbtn{position:absolute;left:12px;bottom:12px;z-index:6;font-size:12px;font-weight:700;letter-spacing:.5px;color:#0b1026;background:linear-gradient(180deg,#c9c3ff,#9e8ce8);border:none;border-radius:999px;padding:8px 16px;cursor:pointer;box-shadow:0 2px 12px rgba(140,120,255,.35);transition:.2s;}
+.backbtn:hover{filter:brightness(1.08);}
+.editing .pos{display:block;}
+.editing .node,.editing .gchip{cursor:grab;touch-action:none;}
+.editing .node:active,.editing .gchip:active{cursor:grabbing;}
+
+.legend{display:flex;flex-wrap:wrap;gap:14px 22px;justify-content:center;margin-top:16px;font-size:12px;color:#b9c1ef;}
+.legend .li{display:flex;align-items:center;gap:7px;}
+.legend .dot{width:12px;height:12px;border-radius:50%;display:inline-block;}
+.legend .ldot{width:14px;height:14px;border-radius:50%;border:1.5px dashed #9ef0fb;display:inline-block;}
+.legend .ln{width:22px;height:0;border-top:1.5px dashed #7f86b5;display:inline-block;}
+
+@media (max-width:560px){
+  .title{font-size:18px;} .title .dim{font-size:15px;}
+  .sub{font-size:12px;}
+  .stage{min-height:640px;}
+  .orb{width:40px;height:40px;font-size:11px;}
+  .orb.core{width:48px;height:48px;font-size:14px;}
+  .ring{width:66px;height:66px;margin-left:-33px;margin-top:-33px;}
+  .node .label{max-width:96px;font-size:10.5px;line-height:1.25;}
+  .dive{font-size:9px;padding:2px 7px;}
+  .gchip{font-size:9px;padding:3px 8px;}
+  .backbtn{left:8px;bottom:8px;font-size:11px;padding:7px 13px;}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="hd">
+    <div class="title">AI-Driven Radio Wave Simulation <span class="dim">· Cosmic Project Map</span></div>
+    <div class="sub">Three nested universes of the ASSET research project — click a glowing node to dive into its sub-universe.</div>
+    <div class="crumbs">
+      <span class="crumb active" data-l="1">Universe 1 · Project</span><span class="sep">›</span>
+      <span class="crumb" data-l="2">Universe 2 · ASSET</span><span class="sep">›</span>
+      <span class="crumb" data-l="3">Universe 3 · Transfer-Learning</span>
+    </div>
+    <div class="editbar">
+      <button id="editBtn" class="ebtn" type="button">✎ Edit Mode</button>
+      <button id="copyBtn" class="ebtn" type="button" style="display:none;">📋 Copy positions</button>
+      <span id="editHint" class="ehint" style="display:none;">Drag any module to reposition — numbers update live. When done, click Copy positions and paste the list into chat, or just tell me the positions.</span>
+    </div>
+  </div>
+
+  <div class="stage" id="stage">
+    <div class="nebula" id="nebula"></div>
+
+    <!-- LEVEL 1 : THE PROJECT UNIVERSE -->
+    <div class="level active" id="lv1">
+      <div class="lv-title">Universe 1 · The Project Universe</div>
+      <svg class="links" viewBox="0 0 1000 620" preserveAspectRatio="none">
+        <ellipse cx="500" cy="315" rx="390" ry="235" stroke="#7f86b5" stroke-dasharray="3 7" fill="none" opacity=".35"/>
+        <line x1="500" y1="315" x2="499" y2="184.76" stroke="#9ef0fb" stroke-dasharray="4 6" opacity=".55" data-src-xy="500,315" data-dst="g1"/>
+        <line x1="500" y1="315" x2="280" y2="430" stroke="#9ef0fb" stroke-dasharray="4 6" opacity=".55" data-src-xy="500,315" data-dst="g2"/>
+        <line x1="500" y1="315" x2="720" y2="430" stroke="#9ef0fb" stroke-dasharray="4 6" opacity=".55" data-src-xy="500,315" data-dst="g3"/>
+      </svg>
+      <div class="node clickable" data-id="g1" style="left:49.9%;top:29.8%;--dc:#9ef0fb;--glow:rgba(80,200,235,.7);" data-goto="2">
+        <div class="orbwrap">
+          <div class="ring"></div>
+          <div class="orb core" style="--c1:#7fe7f5;--c2:#1f6fa8;--glow:rgba(80,200,235,.7);"><span class="mono">AI</span></div>
+        </div>
+        <div class="label">AI-Driven Radio Wave Simulation Platform</div>
+        <div class="dive">⟳ DIVE IN</div>
+      </div>
+      <div class="node" data-id="g2" style="left:28%;top:69.4%;">
+        <div class="orb" style="--c1:#c9a0ff;--c2:#6a4aa8;--glow:rgba(170,110,255,.6);"><span class="mono">✦</span></div>
+        <div class="label">Low-Rate Wireless Communication System</div>
+        <div class="tag">Project Module</div>
+      </div>
+      <div class="node" data-id="g3" style="left:72%;top:69.4%;">
+        <div class="orb" style="--c1:#ff9ac0;--c2:#b04a78;--glow:rgba(255,120,170,.6);"><span class="mono">✦</span></div>
+        <div class="label">Semantic Communication</div>
+        <div class="tag">Project Module</div>
+      </div>
+    </div>
+
+    <!-- LEVEL 2 : THE ASSET UNIVERSE -->
+    <div class="level" id="lv2">
+      <div class="lv-title">Universe 2 · The ASSET Universe</div>
+      <svg class="links" viewBox="0 0 1000 620" preserveAspectRatio="none">
+        <!-- orbit rings removed to fit the new freeform layout -->
+        <line x1="500" y1="334.8" x2="342" y2="193.44" stroke="#b98cff" stroke-dasharray="3 5" opacity=".5" data-src="asset" data-dst="a1"/>
+        <line x1="500" y1="334.8" x2="152" y2="234.36" stroke="#b98cff" stroke-dasharray="3 5" opacity=".5" data-src="asset" data-dst="a2"/>
+        <line x1="500" y1="334.8" x2="165" y2="441.44" stroke="#b98cff" stroke-dasharray="3 5" opacity=".5" data-src="asset" data-dst="a3"/>
+        <line x1="500" y1="334.8" x2="348" y2="481.74" stroke="#b98cff" stroke-dasharray="3 5" opacity=".5" data-src="asset" data-dst="a4"/>
+        <line x1="500" y1="334.8" x2="627" y2="196.54" stroke="#ff8ab8" stroke-dasharray="3 5" opacity=".5" data-src="asset" data-dst="b1"/>
+        <line x1="500" y1="334.8" x2="780" y2="195.3" stroke="#ff8ab8" stroke-dasharray="3 5" opacity=".5" data-src="asset" data-dst="b2"/>
+        <line x1="500" y1="334.8" x2="886" y2="345.96" stroke="#ff8ab8" stroke-dasharray="3 5" opacity=".5" data-src="asset" data-dst="b3"/>
+        <line x1="500" y1="334.8" x2="806" y2="456.94" stroke="#ff8ab8" stroke-dasharray="3 5" opacity=".5" data-src="asset" data-dst="b4"/>
+        <line x1="500" y1="334.8" x2="633" y2="473.06" stroke="#ff8ab8" stroke-dasharray="3 5" opacity=".5" data-src="asset" data-dst="b5"/>
+      </svg>
+      <div class="gchip" data-id="chip1" style="left:15.2%;top:14.3%;--gc:#b98cff;">Group 1 · Learning &amp; Large-Scale</div>
+      <div class="gchip" data-id="chip2" style="left:86%;top:19%;--gc:#ff8ab8;">Group 2 · Rendering &amp; Small-Scale</div>
+      <div class="node clickable" data-id="asset" style="left:50%;top:54%;--dc:#ffd98a;--glow:rgba(255,190,100,.7);" data-goto="3">
+        <div class="orbwrap">
+          <div class="ring"></div>
+          <div class="orb core" style="--c1:#ffe08a;--c2:#c07a20;--glow:rgba(255,190,100,.7);"><span class="mono">ASSET</span></div>
+        </div>
+        <div class="label">ASSET Core</div>
+        <div class="dive">⟳ DIVE IN</div>
+      </div>
+      <div class="node" data-id="a1" style="left:34.2%;top:31.2%;">
+        <div class="orb" style="--c1:#c9a0ff;--c2:#6a4aa8;--glow:rgba(170,110,255,.6);"><span class="mono">✦</span></div>
+        <div class="label">Federated Transfer Learning</div>
+        <div class="tag">Module</div>
+      </div>
+      <div class="node" data-id="a2" style="left:15.2%;top:37.8%;">
+        <div class="orb" style="--c1:#c9a0ff;--c2:#6a4aa8;--glow:rgba(170,110,255,.6);"><span class="mono">✦</span></div>
+        <div class="label">Clustering</div>
+        <div class="tag">Module</div>
+      </div>
+      <div class="node" data-id="a3" style="left:16.5%;top:71.2%;">
+        <div class="orb" style="--c1:#c9a0ff;--c2:#6a4aa8;--glow:rgba(170,110,255,.6);"><span class="mono">✦</span></div>
+        <div class="label">Regional Knowledge-Weighted Fusion</div>
+        <div class="tag">Module</div>
+      </div>
+      <div class="node" data-id="a4" style="left:34.8%;top:77.7%;">
+        <div class="orb" style="--c1:#c9a0ff;--c2:#6a4aa8;--glow:rgba(170,110,255,.6);"><span class="mono">✦</span></div>
+        <div class="label">Large-Scale Radio Wave Simulation</div>
+        <div class="tag">Module</div>
+      </div>
+      <div class="node" data-id="b1" style="left:62.7%;top:31.7%;">
+        <div class="orb" style="--c1:#ff9ac0;--c2:#b04a78;--glow:rgba(255,120,170,.6);"><span class="mono">3DGS</span></div>
+        <div class="label">3DGS</div>
+        <div class="tag">Module</div>
+      </div>
+      <div class="node" data-id="b2" style="left:78%;top:31.5%;">
+        <div class="orb" style="--c1:#ff9ac0;--c2:#b04a78;--glow:rgba(255,120,170,.6);"><span class="mono">UE5</span></div>
+        <div class="label">UE5</div>
+        <div class="tag">Module</div>
+      </div>
+      <div class="node" data-id="b3" style="left:88.6%;top:55.8%;">
+        <div class="orb" style="--c1:#ff9ac0;--c2:#b04a78;--glow:rgba(255,120,170,.6);"><span class="mono">✦</span></div>
+        <div class="label">Physical Phenomena Simulation</div>
+        <div class="tag">Module</div>
+      </div>
+      <div class="node" data-id="b4" style="left:80.6%;top:73.7%;">
+        <div class="orb" style="--c1:#ff9ac0;--c2:#b04a78;--glow:rgba(255,120,170,.6);"><span class="mono">✦</span></div>
+        <div class="label">Measured-Data Calibration</div>
+        <div class="tag">Module</div>
+      </div>
+      <div class="node" data-id="b5" style="left:63.3%;top:76.3%;">
+        <div class="orb" style="--c1:#ff9ac0;--c2:#b04a78;--glow:rgba(255,120,170,.6);"><span class="mono">✦</span></div>
+        <div class="label">Small-Scale Radio Wave Simulation</div>
+        <div class="tag">Module</div>
+      </div>
+    </div>
+
+    <!-- LEVEL 3 : THE TRANSFER-LEARNING UNIVERSE -->
+    <div class="level" id="lv3">
+      <div class="lv-title">Universe 3 · The Transfer-Learning Universe</div>
+      <svg class="links" viewBox="0 0 1000 620" preserveAspectRatio="none">
+        <line x1="503" y1="356.5" x2="501" y2="136.4" stroke="#9ef0fb" stroke-dasharray="3 5" opacity=".5" data-src="tls" data-dst="c1"/>
+        <line x1="503" y1="356.5" x2="300" y2="469.96" stroke="#ffd98a" stroke-dasharray="3 5" opacity=".5" data-src="tls" data-dst="c2"/>
+        <line x1="503" y1="356.5" x2="695" y2="476.78" stroke="#ffd98a" stroke-dasharray="3 5" opacity=".5" data-src="tls" data-dst="c3"/>
+      </svg>
+      <div class="gchip" data-id="chip3" style="left:67.2%;top:13.8%;--gc:#9ef0fb;">Branch A</div>
+      <div class="gchip" data-id="chip4" style="left:49.2%;top:88.9%;--gc:#ffd98a;">Branch B</div>
+      <div class="node" data-id="tls" style="left:50.3%;top:57.5%;">
+        <div class="orb core" style="--c1:#7fe7f5;--c2:#1f6fa8;--glow:rgba(80,200,235,.7);"><span class="mono">TLS</span></div>
+        <div class="label">Transfer Learning Radio Wave Simulation System</div>
+        <div class="tag">System Core</div>
+      </div>
+      <div class="node" data-id="c1" style="left:50.1%;top:22%;">
+        <div class="orb" style="--c1:#7fe7f5;--c2:#1f6fa8;--glow:rgba(80,200,235,.6);"><span class="mono">URAS</span></div>
+        <div class="label">URAS Active Sampling</div>
+        <div class="tag">Module</div>
+      </div>
+      <div class="node" data-id="c2" style="left:30%;top:75.8%;">
+        <div class="orb" style="--c1:#ffd98a;--c2:#b07420;--glow:rgba(255,190,100,.6);"><span class="mono">✦</span></div>
+        <div class="label">Active Update</div>
+        <div class="tag">Module</div>
+      </div>
+      <div class="node" data-id="c3" style="left:69.5%;top:76.9%;">
+        <div class="orb" style="--c1:#ffd98a;--c2:#b07420;--glow:rgba(255,190,100,.6);"><span class="mono">✦</span></div>
+        <div class="label">Knowledge Fusion</div>
+        <div class="tag">Module</div>
+      </div>
+    </div>
+    <button id="backBtn" class="backbtn" type="button" style="display:none;">← Back</button>
+  </div>
+
+  <div class="legend">
+    <span class="li"><span class="dot" style="background:#7fe7f5;box-shadow:0 0 8px rgba(80,200,235,.8);"></span>Project module</span>
+    <span class="li"><span class="ldot"></span>Dive deeper — click to enter</span>
+    <span class="li"><span class="ln"></span>Relation / group link</span>
+  </div>
+</div>
+
+<script>
+(function(){
+  try{
+    var nebula=document.getElementById('nebula');
+    if(nebula){
+      for(var i=0;i<110;i++){
+        var s=document.createElement('div');
+        var tw=Math.random()<0.45;
+        s.className=tw?'star tw':'star';
+        var sz=Math.random()*2+0.6;
+        s.style.width=sz+'px'; s.style.height=sz+'px';
+        s.style.left=(Math.random()*100)+'%';
+        s.style.top=(Math.random()*100)+'%';
+        if(!tw){ s.style.opacity=(0.25+Math.random()*0.6); }
+        if(tw){ s.style.animationDelay=(Math.random()*3)+'s'; }
+        nebula.appendChild(s);
+      }
+    }
+    var state={current:1,busy:false};
+    var levels={1:document.getElementById('lv1'),2:document.getElementById('lv2'),3:document.getElementById('lv3')};
+    var crumbs=document.querySelectorAll('.crumb');
+    function setCrumb(l){
+      for(var i=0;i<crumbs.length;i++){
+        if(parseInt(crumbs[i].getAttribute('data-l'),10)===l){ crumbs[i].classList.add('active'); }
+        else{ crumbs[i].classList.remove('active'); }
+      }
+    }
+    function go(n){
+      if(n===state.current||state.busy){ return; }
+      var cur=levels[state.current];
+      var nxt=levels[n];
+      if(!cur||!nxt){ return; }
+      state.busy=true;
+      var deeper=n>state.current;
+      nxt.classList.add('active');
+      if(deeper){ cur.classList.add('leave-deep'); nxt.classList.add('enter-deep'); }
+      else{ cur.classList.add('leave-shallow'); nxt.classList.add('enter-shallow'); }
+      state.current=n;
+      setCrumb(n);
+      updateBack();
+      setTimeout(function(){
+        cur.classList.remove('active','leave-deep','leave-shallow');
+        nxt.classList.remove('enter-deep','enter-shallow');
+        state.busy=false;
+      },430);
+    }
+    var clickables=document.querySelectorAll('.node.clickable');
+    for(var k=0;k<clickables.length;k++){
+      clickables[k].addEventListener('click',function(){
+        if(editing){ return; }
+        var t=this.getAttribute('data-goto');
+        if(t){ go(parseInt(t,10)); }
+      });
+    }
+    for(var m=0;m<crumbs.length;m++){
+      crumbs[m].addEventListener('click',function(){
+        go(parseInt(this.getAttribute('data-l'),10));
+      });
+    }
+
+    // Back-to-previous-universe button
+    var backBtn=document.getElementById('backBtn');
+    function updateBack(){
+      if(!backBtn){ return; }
+      if(state.current>1){
+        backBtn.style.display='inline-block';
+        backBtn.textContent='← Back to Universe '+(state.current-1);
+      }else{
+        backBtn.style.display='none';
+      }
+    }
+    if(backBtn){ backBtn.addEventListener('click',function(){ go(state.current-1); }); }
+    updateBack();
+
+    // ================= Edit mode: drag to reposition =================
+    var editing=false;
+    var editBtn=document.getElementById('editBtn');
+    var copyBtn=document.getElementById('copyBtn');
+    var editHint=document.getElementById('editHint');
+    var wrap=document.querySelector('.wrap');
+    var allPos=stage.querySelectorAll('.node, .gchip');
+    var nodeById={};
+    for(var pi=0;pi<allPos.length;pi++){ nodeById[allPos[pi].getAttribute('data-id')]=allPos[pi]; }
+    function clampV(v,a,b){ return Math.max(a, Math.min(b, v)); }
+    function makeReadouts(){
+      for(var i=0;i<allPos.length;i++){
+        var n=allPos[i];
+        if(n && !n.querySelector('.pos')){
+          var b=document.createElement('div');
+          b.className='pos';
+          b.textContent='L '+parseFloat(n.style.left).toFixed(1)+'% · T '+parseFloat(n.style.top).toFixed(1)+'%';
+          n.appendChild(b);
+        }
+      }
+    }
+    function updateReadout(el){
+      var p=el.querySelector('.pos');
+      if(p){ p.textContent='L '+parseFloat(el.style.left).toFixed(1)+'% · T '+parseFloat(el.style.top).toFixed(1)+'%'; }
+    }
+    function centerOf(el){
+      var sr=stage.getBoundingClientRect();
+      var tgt=el.querySelector('.orb')||el;
+      var r=tgt.getBoundingClientRect();
+      return [ (r.left-sr.left+r.width/2)/sr.width*1000,
+               (r.top-sr.top+r.height/2)/sr.height*620 ];
+    }
+    function updateLines(id){
+      var lines=stage.querySelectorAll('line');
+      for(var i=0;i<lines.length;i++){
+        var ln=lines[i];
+        if(ln.getAttribute('data-dst')!==id && ln.getAttribute('data-src')!==id){ continue; }
+        var a, b;
+        if(ln.hasAttribute('data-src-xy')){ a=ln.getAttribute('data-src-xy').split(',').map(Number); }
+        else{ var se=nodeById[ln.getAttribute('data-src')]; a=se?centerOf(se):[500,300]; }
+        var de=nodeById[ln.getAttribute('data-dst')]; b=de?centerOf(de):[500,300];
+        ln.setAttribute('x1',a[0]); ln.setAttribute('y1',a[1]);
+        ln.setAttribute('x2',b[0]); ln.setAttribute('y2',b[1]);
+      }
+    }
+    var dragState=null;
+    function onDown(e){
+      if(!editing){ return; }
+      var t=e.target.closest('.node, .gchip');
+      if(!t || !stage.contains(t)){ return; }
+      var r=stage.getBoundingClientRect();
+      dragState={el:t, startX:e.clientX, startY:e.clientY,
+        baseL:parseFloat(t.style.left)||0, baseT:parseFloat(t.style.top)||0, rect:r};
+      try{ t.setPointerCapture(e.pointerId); }catch(err){}
+      e.preventDefault();
+    }
+    function onMove(e){
+      if(!dragState){ return; }
+      var dx=e.clientX-dragState.startX, dy=e.clientY-dragState.startY;
+      var newL=clampV(dragState.baseL + dx/dragState.rect.width*100, 1, 99);
+      var newT=clampV(dragState.baseT + dy/dragState.rect.height*100, 1, 99);
+      dragState.el.style.left=newL.toFixed(1)+'%';
+      dragState.el.style.top=newT.toFixed(1)+'%';
+      updateReadout(dragState.el);
+      var id=dragState.el.getAttribute('data-id');
+      if(id){ updateLines(id); }
+    }
+    function onUp(){ dragState=null; }
+    if(editBtn){
+      editBtn.addEventListener('click',function(){
+        editing=!editing;
+        if(wrap){ wrap.classList.toggle('editing', editing); }
+        editBtn.textContent=editing?'✓ Done':'✎ Edit Mode';
+        editBtn.classList.toggle('on', editing);
+        if(copyBtn){ copyBtn.style.display=editing?'inline-block':'none'; }
+        if(editHint){ editHint.style.display=editing?'inline-block':'none'; }
+        if(editing){ makeReadouts(); }
+      });
+    }
+    if(copyBtn){
+      copyBtn.addEventListener('click',function(){
+        var arr=[];
+        var items=stage.querySelectorAll('.node, .gchip');
+        for(var i=0;i<items.length;i++){
+          var id=items[i].getAttribute('data-id');
+          if(id){ arr.push(id+' : left='+items[i].style.left+'  top='+items[i].style.top); }
+        }
+        var text=arr.join('\n');
+        var ta=document.createElement('textarea');
+        ta.value=text;
+        ta.style.position='fixed'; ta.style.opacity='0';
+        document.body.appendChild(ta);
+        ta.select();
+        var ok=false;
+        try{ ok=document.execCommand('copy'); }catch(err){}
+        document.body.removeChild(ta);
+        if(editHint){
+          editHint.textContent=ok
+            ?'Copied! Paste the list into chat and I will lock it into the file.'
+            :'Copy failed — screenshot or read the numbers aloud instead.';
+          setTimeout(function(){
+            editHint.textContent='Drag any module to reposition — numbers update live. When done, click Copy positions and paste the list into chat, or just tell me the positions.';
+          }, 3500);
+        }
+      });
+    }
+    document.addEventListener('pointerdown', onDown);
+    document.addEventListener('pointermove', onMove);
+    document.addEventListener('pointerup', onUp);
+
+    // initialize all line endpoints to sphere centers on load
+    for(var li in nodeById){
+      if(nodeById.hasOwnProperty(li)){ updateLines(li); }
+    }
+  }catch(err){ console.error(err); }
+})();
+</script>
+</body>
+</html>
