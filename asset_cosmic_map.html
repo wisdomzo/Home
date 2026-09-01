@@ -71,8 +71,23 @@ body{font-family:'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#e9ec
 .backbtn{position:absolute;left:12px;bottom:12px;z-index:6;font-size:12px;font-weight:700;letter-spacing:.5px;color:#0b1026;background:linear-gradient(180deg,#c9c3ff,#9e8ce8);border:none;border-radius:999px;padding:8px 16px;cursor:pointer;box-shadow:0 2px 12px rgba(140,120,255,.35);transition:.2s;}
 .backbtn:hover{filter:brightness(1.08);}
 .editing .pos{display:block;}
-.editing .node,.editing .gchip{cursor:grab;touch-action:none;}
-.editing .node:active,.editing .gchip:active{cursor:grabbing;}
+.editing .node,.editing .gchip,.editing .asset-orb,.editing .asset-icon{cursor:grab;touch-action:none;}
+.editing .node:active,.editing .gchip:active,.editing .asset-orb:active,.editing .asset-icon:active{cursor:grabbing;}
+.asset-orb,.asset-icon{position:absolute;transform:translate(-50%,-50%);z-index:2;cursor:default;}
+.asset-orb{--size:44px;}
+.asset-orb .orb{width:var(--size);height:var(--size);}
+.asset-icon{--size:40px;}
+.icon-square{width:var(--size);height:var(--size);border-radius:8px;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:calc(var(--size)*0.45);letter-spacing:1px;color:var(--ic);background:rgba(5,5,15,.75);border:2px solid var(--ic);box-shadow:0 0 12px 2px var(--ic), inset 0 0 8px rgba(255,255,255,.08);}
+.del-btn{position:absolute;top:-10px;right:-10px;width:20px;height:20px;border-radius:50%;background:#ff2a6d;color:#fff;font-size:13px;font-weight:900;display:none;align-items:center;justify-content:center;cursor:pointer;z-index:5;border:1px solid rgba(255,255,255,.45);box-shadow:0 0 8px rgba(255,42,109,.6);line-height:1;}
+.editing .asset-orb .del-btn,.editing .asset-icon .del-btn{display:flex;}
+.asset-orb.selected,.asset-icon.selected{outline:2px dashed #9ef0fb;outline-offset:6px;border-radius:10px;}
+.inspector{display:none;flex-wrap:wrap;align-items:center;gap:10px;margin-top:10px;padding:10px 14px;background:rgba(10,15,40,.88);border:1px solid rgba(158,240,251,.3);border-radius:12px;font-size:12px;color:#b9c1ef;}
+.inspector.show{display:flex;}
+.inspector label{display:flex;align-items:center;gap:6px;}
+.inspector input[type=range]{width:120px;accent-color:#9ef0fb;}
+.inspector input[type=color]{width:34px;height:26px;padding:0;border:1px solid rgba(158,240,251,.4);border-radius:6px;background:transparent;cursor:pointer;}
+.inspector .ins-del{background:linear-gradient(180deg,#ff8ab8,#ff2a6d);color:#fff;border:none;border-radius:999px;padding:5px 12px;font-size:11px;font-weight:700;cursor:pointer;box-shadow:0 2px 8px rgba(255,42,109,.4);}
+.inspector #insLabel{font-weight:700;color:#9ef0fb;}
 
 .legend{display:flex;flex-wrap:wrap;gap:14px 22px;justify-content:center;margin-top:16px;font-size:12px;color:#b9c1ef;}
 .legend .li{display:flex;align-items:center;gap:7px;}
@@ -91,6 +106,8 @@ body{font-family:'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#e9ec
   .dive{font-size:9px;padding:2px 7px;}
   .gchip{font-size:9px;padding:3px 8px;}
   .backbtn{left:8px;bottom:8px;font-size:11px;padding:7px 13px;}
+  .asset-orb{--size:34px;}
+  .asset-icon{--size:32px;}
 }
 </style>
 </head>
@@ -107,7 +124,17 @@ body{font-family:'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#e9ec
     <div class="editbar">
       <button id="editBtn" class="ebtn" type="button">✎ Edit Mode</button>
       <button id="copyBtn" class="ebtn" type="button" style="display:none;">📋 Copy positions</button>
-      <span id="editHint" class="ehint" style="display:none;">Drag any module to reposition — numbers update live. When done, click Copy positions and paste the list into chat, or just tell me the positions.</span>
+      <button id="addOrbBtn" class="ebtn" type="button" style="display:none;">+ Orb</button>
+      <button id="addPBtn" class="ebtn" type="button" style="display:none;">+ P</button>
+      <button id="addCBtn" class="ebtn" type="button" style="display:none;">+ C</button>
+      <button id="addRBtn" class="ebtn" type="button" style="display:none;">+ R</button>
+      <span id="editHint" class="ehint" style="display:none;">Drag any module to reposition, or use + buttons to add orbs and P/C/R icons. When done, click Copy positions and paste the list into chat, or just tell me the positions.</span>
+      <div id="inspector" class="inspector">
+        <span id="insLabel">Selected: —</span>
+        <label>Size <input id="insSize" type="range" min="20" max="120" value="44"></label>
+        <label>Color <input id="insColor" type="color" value="#7fe7f5"></label>
+        <button id="insDel" class="ins-del" type="button">🗑 Delete</button>
+      </div>
     </div>
   </div>
 
@@ -335,14 +362,26 @@ body{font-family:'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#e9ec
     var editBtn=document.getElementById('editBtn');
     var copyBtn=document.getElementById('copyBtn');
     var editHint=document.getElementById('editHint');
+    var addOrbBtn=document.getElementById('addOrbBtn');
+    var addPBtn=document.getElementById('addPBtn');
+    var addCBtn=document.getElementById('addCBtn');
+    var addRBtn=document.getElementById('addRBtn');
+    var inspector=document.getElementById('inspector');
+    var insLabel=document.getElementById('insLabel');
+    var insSize=document.getElementById('insSize');
+    var insColor=document.getElementById('insColor');
+    var insDel=document.getElementById('insDel');
+    var selectedEl=null;
     var wrap=document.querySelector('.wrap');
-    var allPos=stage.querySelectorAll('.node, .gchip');
+    var MOVABLE='.node, .gchip, .asset-orb, .asset-icon';
+    var allPos=stage.querySelectorAll(MOVABLE);
     var nodeById={};
     for(var pi=0;pi<allPos.length;pi++){ nodeById[allPos[pi].getAttribute('data-id')]=allPos[pi]; }
     function clampV(v,a,b){ return Math.max(a, Math.min(b, v)); }
     function makeReadouts(){
-      for(var i=0;i<allPos.length;i++){
-        var n=allPos[i];
+      var items=stage.querySelectorAll(MOVABLE);
+      for(var i=0;i<items.length;i++){
+        var n=items[i];
         if(n && !n.querySelector('.pos')){
           var b=document.createElement('div');
           b.className='pos';
@@ -378,16 +417,18 @@ body{font-family:'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#e9ec
     var dragState=null;
     function onDown(e){
       if(!editing){ return; }
-      var t=e.target.closest('.node, .gchip');
+      if(e.target.closest('.del-btn')){ return; }
+      var t=e.target.closest(MOVABLE);
       if(!t || !stage.contains(t)){ return; }
       var r=stage.getBoundingClientRect();
       dragState={el:t, startX:e.clientX, startY:e.clientY,
-        baseL:parseFloat(t.style.left)||0, baseT:parseFloat(t.style.top)||0, rect:r};
+        baseL:parseFloat(t.style.left)||0, baseT:parseFloat(t.style.top)||0, rect:r, moved:false};
       try{ t.setPointerCapture(e.pointerId); }catch(err){}
       e.preventDefault();
     }
     function onMove(e){
       if(!dragState){ return; }
+      dragState.moved=true;
       var dx=e.clientX-dragState.startX, dy=e.clientY-dragState.startY;
       var newL=clampV(dragState.baseL + dx/dragState.rect.width*100, 1, 99);
       var newT=clampV(dragState.baseT + dy/dragState.rect.height*100, 1, 99);
@@ -397,7 +438,81 @@ body{font-family:'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#e9ec
       var id=dragState.el.getAttribute('data-id');
       if(id){ updateLines(id); }
     }
-    function onUp(){ dragState=null; }
+    function onUp(e){
+      if(dragState && !dragState.moved && editing){
+        var el=dragState.el;
+        if(el && (el.classList.contains('asset-orb')||el.classList.contains('asset-icon'))){
+          selectAsset(el);
+        }else{
+          deselect();
+        }
+      }
+      dragState=null;
+    }
+
+    // ---- Add placeholder assets (orbs & P/C/R square icons) ----
+    var assetCounter={orb:0,p:0,c:0,r:0};
+    function addAsset(type){
+      var el=document.createElement('div');
+      var key=type.toLowerCase();
+      assetCounter[key]=(assetCounter[key]||0)+1;
+      var id=key+'-'+assetCounter[key];
+      if(type==='orb'){
+        el.className='asset-orb';
+        el.innerHTML='<div class="del-btn">×</div><div class="orb" style="--c1:#7fe7f5;--c2:#1f6fa8;--glow:rgba(80,200,235,.7);"><span class="mono">✦</span></div>';
+      }else{
+        el.className='asset-icon';
+        var colors={P:'#9ef0fb',C:'#ffd98a',R:'#ff9ac0'};
+        var ic=colors[type]||'#9ef0fb';
+        el.innerHTML='<div class="del-btn">×</div><div class="icon-square" style="--ic:'+ic+';">'+type+'</div>';
+      }
+      el.setAttribute('data-id',id);
+      el.style.left=(22+Math.random()*56).toFixed(1)+'%';
+      el.style.top=(32+Math.random()*36).toFixed(1)+'%';
+      var activeLevel=stage.querySelector('.level.active');
+      (activeLevel||stage).appendChild(el);
+      nodeById[id]=el;
+      if(editing){ makeReadouts(); }
+    }
+    if(addOrbBtn){ addOrbBtn.addEventListener('click',function(){ addAsset('orb'); }); }
+    if(addPBtn){ addPBtn.addEventListener('click',function(){ addAsset('P'); }); }
+    if(addCBtn){ addCBtn.addEventListener('click',function(){ addAsset('C'); }); }
+    if(addRBtn){ addRBtn.addEventListener('click',function(){ addAsset('R'); }); }
+    function setAddBtns(show){
+      var d=show?'inline-block':'none';
+      if(addOrbBtn){ addOrbBtn.style.display=d; }
+      if(addPBtn){ addPBtn.style.display=d; }
+      if(addCBtn){ addCBtn.style.display=d; }
+      if(addRBtn){ addRBtn.style.display=d; }
+    }
+    function selectAsset(el){
+      deselect();
+      selectedEl=el;
+      el.classList.add('selected');
+      if(inspector){ inspector.classList.add('show'); }
+      if(insLabel){ insLabel.textContent='Selected: '+el.getAttribute('data-id'); }
+      var size=parseFloat(getComputedStyle(el).getPropertyValue('--size'))||44;
+      if(insSize){ insSize.value=Math.round(size); }
+      if(insColor){
+        var isOrb=el.classList.contains('asset-orb');
+        var child=isOrb?el.querySelector('.orb'):el.querySelector('.icon-square');
+        var prop=isOrb?'--c1':'--ic';
+        var def=isOrb?'#7fe7f5':'#9ef0fb';
+        var c=(child&&child.style.getPropertyValue(prop))||def;
+        insColor.value=c.trim();
+      }
+    }
+    function deselect(){
+      if(selectedEl){ selectedEl.classList.remove('selected'); }
+      selectedEl=null;
+      if(inspector){ inspector.classList.remove('show'); }
+    }
+    function deleteAsset(el){
+      var id=el.getAttribute('data-id');
+      if(id){ delete nodeById[id]; }
+      if(selectedEl===el){ deselect(); }
+      el.remove();
+    }
     if(editBtn){
       editBtn.addEventListener('click',function(){
         editing=!editing;
@@ -406,13 +521,15 @@ body{font-family:'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#e9ec
         editBtn.classList.toggle('on', editing);
         if(copyBtn){ copyBtn.style.display=editing?'inline-block':'none'; }
         if(editHint){ editHint.style.display=editing?'inline-block':'none'; }
+        setAddBtns(editing);
+        if(!editing){ deselect(); }
         if(editing){ makeReadouts(); }
       });
     }
     if(copyBtn){
       copyBtn.addEventListener('click',function(){
         var arr=[];
-        var items=stage.querySelectorAll('.node, .gchip');
+        var items=stage.querySelectorAll(MOVABLE);
         for(var i=0;i<items.length;i++){
           var id=items[i].getAttribute('data-id');
           if(id){ arr.push(id+' : left='+items[i].style.left+'  top='+items[i].style.top); }
@@ -431,11 +548,38 @@ body{font-family:'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#e9ec
             ?'Copied! Paste the list into chat and I will lock it into the file.'
             :'Copy failed — screenshot or read the numbers aloud instead.';
           setTimeout(function(){
-            editHint.textContent='Drag any module to reposition — numbers update live. When done, click Copy positions and paste the list into chat, or just tell me the positions.';
+            editHint.textContent='Drag any module to reposition, or use + buttons to add orbs and P/C/R icons. When done, click Copy positions and paste the list into chat, or just tell me the positions.';
           }, 3500);
         }
       });
     }
+
+    // ---- Inspector: size / color / delete for the selected asset ----
+    if(insSize){ insSize.addEventListener('input', function(){ if(selectedEl){ selectedEl.style.setProperty('--size', this.value+'px'); } }); }
+    if(insColor){ insColor.addEventListener('input', function(){
+      if(!selectedEl){ return; }
+      var c=this.value;
+      if(selectedEl.classList.contains('asset-orb')){
+        var orbEl=selectedEl.querySelector('.orb');
+        if(orbEl){ orbEl.style.setProperty('--c1', c); orbEl.style.setProperty('--glow', c); }
+      }else{
+        var iconEl=selectedEl.querySelector('.icon-square');
+        if(iconEl){ iconEl.style.setProperty('--ic', c); }
+      }
+    }); }
+    if(insDel){ insDel.addEventListener('click', function(){ if(selectedEl){ deleteAsset(selectedEl); } }); }
+    document.addEventListener('click', function(e){
+      if(!editing){ return; }
+      var del=e.target.closest('.del-btn');
+      if(del){
+        var ast=del.closest('.asset-orb, .asset-icon');
+        if(ast){ deleteAsset(ast); }
+        return;
+      }
+      if(e.target.closest('.asset-orb, .asset-icon, #inspector, .editbar')){ return; }
+      deselect();
+    });
+
     document.addEventListener('pointerdown', onDown);
     document.addEventListener('pointermove', onMove);
     document.addEventListener('pointerup', onUp);
