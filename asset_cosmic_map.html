@@ -89,6 +89,18 @@ body{font-family:'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#e9ec
 .inspector .ins-del{background:linear-gradient(180deg,#ff8ab8,#ff2a6d);color:#fff;border:none;border-radius:999px;padding:5px 12px;font-size:11px;font-weight:700;cursor:pointer;box-shadow:0 2px 8px rgba(255,42,109,.4);}
 .inspector #insLabel{font-weight:700;color:#9ef0fb;}
 
+.asset-tooltip{position:absolute;left:calc(100% + 12px);top:50%;transform:translateY(-50%) translateX(4px);
+  padding:6px 12px;background:rgba(8,12,30,.92);border:1px solid rgba(158,240,251,.35);border-radius:8px;
+  font-size:11px;font-weight:600;letter-spacing:1.2px;color:#9ef0fb;
+  text-shadow:0 0 8px rgba(158,240,251,.4);
+  box-shadow:0 0 14px rgba(158,240,251,.18),0 4px 18px rgba(0,0,0,.55);
+  max-width:240px;white-space:normal;text-align:left;line-height:1.45;
+  opacity:0;pointer-events:none;transition:opacity .25s ease,transform .25s ease;z-index:10;}
+.asset-tooltip.show{opacity:1;transform:translateY(-50%) translateX(0);}
+.asset-tooltip::before{content:'';position:absolute;top:50%;right:100%;margin-top:-6px;border:6px solid transparent;border-right-color:rgba(158,240,251,.35);}
+.asset-tooltip::after{content:'';position:absolute;top:50%;right:100%;margin-top:-5px;margin-right:1px;border:5px solid transparent;border-right-color:rgba(8,12,30,.92);}
+.node:hover,.asset-orb:hover{z-index:100;}
+
 .legend{display:flex;flex-wrap:wrap;gap:14px 22px;justify-content:center;margin-top:16px;font-size:12px;color:#b9c1ef;}
 .legend .li{display:flex;align-items:center;gap:7px;}
 .legend .dot{width:12px;height:12px;border-radius:50%;display:inline-block;}
@@ -252,7 +264,7 @@ body{font-family:'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#e9ec
       </svg>
       <div class="gchip" data-id="chip3" style="left:62%;top:38.5%;--gc:#9ef0fb;">Part I</div>
       <div class="gchip" data-id="chip4" style="left:50%;top:80%;--gc:#ffd98a;">Part II</div>
-      <div class="node" data-id="tls" style="left:50.3%;top:57.5%;">
+      <div class="node" data-id="tls" style="left:50.3%;top:57.5%;" data-tooltip="PP_R">
         <div class="orb core" style="--c1:#7fe7f5;--c2:#1f6fa8;--glow:rgba(80,200,235,.7);"><span class="mono">✦</span></div>
         <div class="label">Transfer Learning Based Radio Simulation System</div>
         <div class="tag">System Core</div>
@@ -423,6 +435,9 @@ body{font-family:'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#e9ec
       var r=stage.getBoundingClientRect();
       dragState={el:t, startX:e.clientX, startY:e.clientY,
         baseL:parseFloat(t.style.left)||0, baseT:parseFloat(t.style.top)||0, rect:r, moved:false};
+      clearTimeout(tooltipTimer);
+      var tips=stage.querySelectorAll('.asset-tooltip.show');
+      for(var ti=0;ti<tips.length;ti++){ tips[ti].classList.remove('show'); }
       try{ t.setPointerCapture(e.pointerId); }catch(err){}
       e.preventDefault();
     }
@@ -631,6 +646,39 @@ body{font-family:'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#e9ec
       }
       if(e.target.closest('.asset-orb, .asset-icon, #inspector, .editbar')){ return; }
       deselect();
+    });
+
+    // ---- Hover tooltip for orbs (added assets + original nodes) ----
+    var tooltipTimer=null;
+    function getTooltip(el){
+      var tip=el.querySelector('.asset-tooltip');
+      if(!tip){
+        tip=document.createElement('div');
+        tip.className='asset-tooltip';
+        el.appendChild(tip);
+      }
+      return tip;
+    }
+    stage.addEventListener('mouseover', function(e){
+      var el=e.target.closest('.asset-orb, .node');
+      if(!el || !stage.contains(el)){ return; }
+      if(e.relatedTarget && el.contains(e.relatedTarget)){ return; }
+      var text=el.getAttribute('data-tooltip');
+      if(!text){ return; }
+      clearTimeout(tooltipTimer);
+      var tip=getTooltip(el);
+      tip.innerHTML=text;
+      tooltipTimer=setTimeout(function(){
+        if(!dragState){ tip.classList.add('show'); }
+      }, 2000);
+    });
+    stage.addEventListener('mouseout', function(e){
+      var el=e.target.closest('.asset-orb, .node');
+      if(!el){ return; }
+      if(e.relatedTarget && el.contains(e.relatedTarget)){ return; }
+      clearTimeout(tooltipTimer);
+      var tip=el.querySelector('.asset-tooltip');
+      if(tip){ tip.classList.remove('show'); }
     });
 
     document.addEventListener('pointerdown', onDown);
