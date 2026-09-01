@@ -439,6 +439,8 @@ body{font-family:'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#e9ec
       if(id){ updateLines(id); }
     }
     function onUp(e){
+      var wasMoved=dragState&&dragState.moved;
+      var movedEl=dragState?dragState.el:null;
       if(dragState && !dragState.moved && editing){
         var el=dragState.el;
         if(el && (el.classList.contains('asset-orb')||el.classList.contains('asset-icon'))){
@@ -448,36 +450,85 @@ body{font-family:'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#e9ec
         }
       }
       dragState=null;
+      if(wasMoved && movedEl && (movedEl.classList.contains('asset-orb')||movedEl.classList.contains('asset-icon'))){
+        saveAssets();
+      }
     }
 
     // ---- Add placeholder assets (orbs & P/C/R square icons) ----
     var assetCounter={orb:0,p:0,c:0,r:0};
-    function addAsset(type){
+    function addAsset(type, opts){
+      opts=opts||{};
       var el=document.createElement('div');
       var key=type.toLowerCase();
-      assetCounter[key]=(assetCounter[key]||0)+1;
-      var id=key+'-'+assetCounter[key];
+      var num;
+      if(opts.id){
+        var m=opts.id.match(/-(\d+)$/);
+        num=m?parseInt(m[1],10):0;
+        assetCounter[key]=Math.max(assetCounter[key]||0, num);
+      }else{
+        assetCounter[key]=(assetCounter[key]||0)+1;
+        num=assetCounter[key];
+      }
+      var id=opts.id||(key+'-'+num);
       if(type==='orb'){
         el.className='asset-orb';
-        el.innerHTML='<div class="del-btn">×</div><div class="orb" style="--c1:#7fe7f5;--c2:#1f6fa8;--glow:rgba(80,200,235,.7);"><span class="mono">✦</span></div>';
+        var c1=opts.color||'#7fe7f5';
+        var glow=opts.glow||opts.color||'rgba(80,200,235,.7)';
+        el.innerHTML='<div class="del-btn">×</div><div class="orb" style="--c1:'+c1+';--c2:#1f6fa8;--glow:'+glow+';"><span class="mono">✦</span></div>';
       }else{
         el.className='asset-icon';
         var colors={P:'#9ef0fb',C:'#ffd98a',R:'#ff9ac0'};
-        var ic=colors[type]||'#9ef0fb';
+        var ic=opts.color||colors[type]||'#9ef0fb';
         el.innerHTML='<div class="del-btn">×</div><div class="icon-square" style="--ic:'+ic+';">'+type+'</div>';
       }
       el.setAttribute('data-id',id);
-      el.style.left=(22+Math.random()*56).toFixed(1)+'%';
-      el.style.top=(32+Math.random()*36).toFixed(1)+'%';
+      el.style.left=opts.left||((22+Math.random()*56).toFixed(1)+'%');
+      el.style.top=opts.top||((32+Math.random()*36).toFixed(1)+'%');
+      if(opts.size){ el.style.setProperty('--size', opts.size); }
       var activeLevel=stage.querySelector('.level.active');
       (activeLevel||stage).appendChild(el);
       nodeById[id]=el;
       if(editing){ makeReadouts(); }
     }
-    if(addOrbBtn){ addOrbBtn.addEventListener('click',function(){ addAsset('orb'); }); }
-    if(addPBtn){ addPBtn.addEventListener('click',function(){ addAsset('P'); }); }
-    if(addCBtn){ addCBtn.addEventListener('click',function(){ addAsset('C'); }); }
-    if(addRBtn){ addRBtn.addEventListener('click',function(){ addAsset('R'); }); }
+
+    // ---- Persist added assets to localStorage ----
+    var ASSET_KEY='cosmic_map_assets_v1';
+    function saveAssets(){
+      var list=[];
+      var els=stage.querySelectorAll('.asset-orb, .asset-icon');
+      for(var i=0;i<els.length;i++){
+        var el=els[i];
+        var id=el.getAttribute('data-id');
+        var isOrb=el.classList.contains('asset-orb');
+        var type=isOrb?'orb':(el.querySelector('.icon-square')?el.querySelector('.icon-square').textContent:'P');
+        var child=isOrb?el.querySelector('.orb'):el.querySelector('.icon-square');
+        var color=isOrb?(child.style.getPropertyValue('--c1')||'#7fe7f5'):(child.style.getPropertyValue('--ic')||'#9ef0fb');
+        var glow=isOrb?(child.style.getPropertyValue('--glow')||''):'';
+        list.push({
+          id:id, type:type,
+          left:el.style.left, top:el.style.top,
+          size:el.style.getPropertyValue('--size')||'',
+          color:color.trim(), glow:glow.trim()
+        });
+      }
+      try{ localStorage.setItem(ASSET_KEY, JSON.stringify(list)); }catch(e){}
+    }
+    function loadAssets(){
+      try{
+        var raw=localStorage.getItem(ASSET_KEY);
+        if(!raw) return;
+        var list=JSON.parse(raw);
+        for(var i=0;i<list.length;i++){
+          var a=list[i];
+          addAsset(a.type, {id:a.id, left:a.left, top:a.top, size:a.size, color:a.color, glow:a.glow});
+        }
+      }catch(e){}
+    }
+    if(addOrbBtn){ addOrbBtn.addEventListener('click',function(){ addAsset('orb'); saveAssets(); }); }
+    if(addPBtn){ addPBtn.addEventListener('click',function(){ addAsset('P'); saveAssets(); }); }
+    if(addCBtn){ addCBtn.addEventListener('click',function(){ addAsset('C'); saveAssets(); }); }
+    if(addRBtn){ addRBtn.addEventListener('click',function(){ addAsset('R'); saveAssets(); }); }
     function setAddBtns(show){
       var d=show?'inline-block':'none';
       if(addOrbBtn){ addOrbBtn.style.display=d; }
@@ -512,6 +563,7 @@ body{font-family:'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#e9ec
       if(id){ delete nodeById[id]; }
       if(selectedEl===el){ deselect(); }
       el.remove();
+      saveAssets();
     }
     if(editBtn){
       editBtn.addEventListener('click',function(){
@@ -555,7 +607,7 @@ body{font-family:'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#e9ec
     }
 
     // ---- Inspector: size / color / delete for the selected asset ----
-    if(insSize){ insSize.addEventListener('input', function(){ if(selectedEl){ selectedEl.style.setProperty('--size', this.value+'px'); } }); }
+    if(insSize){ insSize.addEventListener('input', function(){ if(selectedEl){ selectedEl.style.setProperty('--size', this.value+'px'); saveAssets(); } }); }
     if(insColor){ insColor.addEventListener('input', function(){
       if(!selectedEl){ return; }
       var c=this.value;
@@ -566,6 +618,7 @@ body{font-family:'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#e9ec
         var iconEl=selectedEl.querySelector('.icon-square');
         if(iconEl){ iconEl.style.setProperty('--ic', c); }
       }
+      saveAssets();
     }); }
     if(insDel){ insDel.addEventListener('click', function(){ if(selectedEl){ deleteAsset(selectedEl); } }); }
     document.addEventListener('click', function(e){
@@ -584,6 +637,8 @@ body{font-family:'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#e9ec
     document.addEventListener('pointermove', onMove);
     document.addEventListener('pointerup', onUp);
 
+    // restore persisted added assets
+    loadAssets();
     // initialize all line endpoints to sphere centers on load
     for(var li in nodeById){
       if(nodeById.hasOwnProperty(li)){ updateLines(li); }
