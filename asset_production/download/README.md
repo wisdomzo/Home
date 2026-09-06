@@ -10,7 +10,7 @@ Then open `http://127.0.0.1:8796/download.html`.
 
 ## Release configuration
 
-All platforms are intentionally **準備中 / Coming soon**, as requested.
+Apple Silicon v2.7.7 is available. Intel and Windows remain **準備中 / Coming soon**.
 Edit `releases.js` to enable an installer:
 
 ```js
@@ -44,8 +44,7 @@ colors, vegetation and architecture reflect the user's final scene revision.
 If updating these files on an existing deployment, also increment the query
 version in `download.html` to prevent stale cached scripts.
 
-The PDF is a copy of the project's existing fine-tuning guide, not a new full
-installation manual. Standard icons come from Lucide under its included license.
+The incorrect fine-tuning PDF entry has been removed. Standard icons come from Lucide under its included license.
 
 ## Verification
 
@@ -55,3 +54,5 @@ node --test tests/test_download_motion.cjs
 
 Rendered QA evidence lives in `design-preview/download-qa/` and the project-root
 `design-qa.md`. Responsive viewport checks are not physical iPhone testing.
+
+The scene uses expanding horizontal rings and three animated quadcopters. Pause applies to both flight and wave animation.

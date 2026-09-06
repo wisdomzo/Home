@@ -182,26 +182,40 @@
   }
   const sources = [station(-3.4, 2.2, 1.42, true), station(1.35, -1.8, 1.1, false), station(3.15, 2.35, 0.98, false)];
   const waves = [];
-  function arcGeometry(axis) {
-    const points = [];
-    for (let n = 0; n <= 80; n++) {
-      const angle = n / 80 * (axis === 'horizontal' ? Math.PI * 2 : Math.PI);
-      points.push(axis === 'horizontal' ? new T.Vector3(Math.cos(angle), 0, Math.sin(angle)) : new T.Vector3(Math.cos(angle), Math.sin(angle), 0));
-    }
-    return new T.BufferGeometry().setFromPoints(points);
-  }
-  const horizontalArc = arcGeometry('horizontal'), uprightArc = arcGeometry('upright');
+  const ringPoints = Array.from({ length: 81 }, (_, n) => {
+    const angle = n / 80 * Math.PI * 2;
+    return new T.Vector3(Math.cos(angle), 0, Math.sin(angle));
+  });
+  const horizontalArc = new T.BufferGeometry().setFromPoints(ringPoints);
   sources.forEach((source, sourceIndex) => {
     for (let n = 0; n < 3; n++) {
       const wave = new T.Group(); wave.position.copy(source); world.add(wave);
       const material = new T.LineBasicMaterial({ color: 0x356cff, toneMapped: false, transparent: true, opacity: 0.32, depthWrite: false });
       wave.add(new T.Line(horizontalArc, material));
-      for (const angle of [0, Math.PI / 2]) {
-        const arc = new T.Line(uprightArc, material); arc.rotation.y = angle; wave.add(arc);
-      }
       waves.push({ group: wave, material, offset: n / 3 + sourceIndex * 0.13 });
     }
   });
+
+  // Small quadcopters share the scene clock so pause and reduced motion apply.
+  const drones = [];
+  const droneShell = new T.MeshStandardMaterial({ color: 0xf0f3f6, metalness: 0.35, roughness: 0.4 });
+  const droneDark = new T.MeshStandardMaterial({ color: 0x253345, roughness: 0.6 });
+  for (let i = 0; i < 3; i++) {
+    const drone = new T.Group(), rotors = [];
+    const body = new T.Mesh(new T.BoxGeometry(0.23, 0.09, 0.16), droneShell);
+    drone.add(body);
+    const cameraPod = new T.Mesh(new T.SphereGeometry(0.045, 10, 8), droneDark);
+    cameraPod.position.set(0, -0.065, 0.07); drone.add(cameraPod);
+    for (const x of [-0.18, 0.18]) for (const z of [-0.18, 0.18]) {
+      const arm = new T.Mesh(new T.BoxGeometry(0.27, 0.025, 0.035), droneShell);
+      arm.position.set(x / 2, 0, z / 2); arm.rotation.y = -Math.atan2(z, x); drone.add(arm);
+      const motor = new T.Mesh(new T.CylinderGeometry(0.028, 0.028, 0.06, 8), droneDark);
+      motor.position.set(x, 0.02, z); drone.add(motor);
+      const rotor = new T.Mesh(new T.BoxGeometry(0.25, 0.008, 0.024), droneDark);
+      rotor.position.set(x, 0.057, z); drone.add(rotor); rotors.push(rotor);
+    }
+    world.add(drone); drones.push({ drone, rotors, phase: i * Math.PI * 2 / 3 });
+  }
 
   const clock = createMotionClock(); clock.setPaused(reduced.matches);
   let request = 0, inView = true, disposed = false;
@@ -213,6 +227,12 @@
       const phase = (elapsed * 0.22 + offset) % 1;
       group.scale.setScalar(0.12 + phase * 2.1);
       material.opacity = 0.5 * Math.sin(phase * Math.PI) * (1 - phase * 0.55);
+    });
+    drones.forEach(({ drone, rotors, phase }) => {
+      const angle = elapsed * 0.12 + phase;
+      drone.position.set(Math.cos(angle) * 3.3, 3.35 + Math.sin(angle * 2 + phase) * 0.18, Math.sin(angle) * 2.3);
+      drone.rotation.set(Math.sin(angle) * 0.04, -angle, Math.cos(angle) * 0.06);
+      rotors.forEach((rotor, i) => { rotor.rotation.y = elapsed * 35 * (i % 2 ? -1 : 1); });
     });
     controls.update();
     renderer.render(scene, camera);
